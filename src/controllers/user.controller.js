@@ -51,8 +51,8 @@ const registerUser = asyncHandler(async (req, res) =>{
 
     // Validation for already exited user
 
-    const UserNameExist = User.findOne({userName})
-    const UserEmailExist = User.findOne({email})
+    const UserNameExist = await User.findOne({userName})
+    const UserEmailExist = await User.findOne({email})
 
     if(UserEmailExist){
       throw new ApiError(408, "Email Already Exist");
@@ -75,7 +75,13 @@ const registerUser = asyncHandler(async (req, res) =>{
 
     // Checking the avatar image 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0 ){
+      coverImageLocalPath = req.files.coverImage[0].path
+    }
+
 
     if(!avatarLocalPath){
       throw new ApiError(400, "Avatar is required")
