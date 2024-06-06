@@ -5,7 +5,7 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
-import ApiResponce from "../utils/ApiResponce.js";
+import ApiResponse from "../utils/ApiResponse.js";
 import jwt, { decode } from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -110,7 +110,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // uploading the avatar and coverImage to the cloudinary
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-  const coverImage = uploadOnCloudinary(coverImageLocalPath);
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
   if (!avatar) {
     throw new ApiError(400, "Avatar is required");
@@ -137,7 +137,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponce(200, createdUser, "User Registered Successfully"));
+    .json(new ApiResponse(200, createdUser, "User Registered Successfully"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -182,7 +182,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
-      new ApiResponce(
+      new ApiResponse(
         200,
         {
           user: loggedInUser,
@@ -216,7 +216,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponce(200, {}, "User logout successfully"));
+    .json(new ApiResponse(200, {}, "User logout successfully"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -256,7 +256,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .cookie("AccessToken", accessToken, options)
       .cookie("RefreshToken", newRefreshToken, options)
       .json(
-        new ApiResponce(200),
+        new ApiResponse(200),
         { accessToken, refreshToken: newRefreshToken },
         "Access Token Refreshed Successfully"
       );
@@ -285,13 +285,13 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponce(200, {}, "Password changed successfully"));
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(new ApiResponce(200, req.user, "Current user Fetched Seccessfullly"));
+    .json(new ApiResponse(200, req.user, "Current user Fetched Seccessfullly"));
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -314,7 +314,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponce(200, user, "Account details updated successfully"));
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
@@ -355,7 +355,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponce(200, user, "Avatar updated Successfully"));
+    .json(new ApiResponse(200, user, "Avatar updated Successfully"));
 });
 
 const upadateUserCoverImage = asyncHandler(async (req, res) => {
@@ -393,7 +393,7 @@ const upadateUserCoverImage = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponce(200, user, "CoverImage Updated successfully"));
+    .json(new ApiResponse(200, user, "CoverImage Updated successfully"));
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
@@ -465,7 +465,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponce(200, channel[0], "User Channel Fetched Successfully!!!")
+      new ApiResponse(200, channel[0], "User Channel Fetched Successfully!!!")
     );
 });
 
@@ -515,7 +515,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponce(
+      new ApiResponse(
         200,
         user[0].watchHistory,
         "Watch history fetched successullly!!"
