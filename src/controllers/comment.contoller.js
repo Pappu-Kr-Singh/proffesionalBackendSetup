@@ -1,85 +1,114 @@
 import mongoose from "mongoose";
-import { Comment } from "../models/comment.model.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { Comment } from "../modles/comment.model.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-// const getVideoComments = asyncHandler(async (req, res) => {
-//   //TODO: get all comments for a video
-//   const { videoId } = req.params;
-//   const { page = 1, limit = 10 } = req.query;
-
-//   // const filterComments =
-// });
-
 const getVideoComments = asyncHandler(async (req, res) => {
+  //TODO: get all comments for a video
   const { videoId } = req.params;
   const { page = 1, limit = 10 } = req.query;
 
-  // Create the aggregation pipeline
-  const pipeline = [
-    {
-      $match: {
-        video: mongoose.Types.ObjectId(videoId),
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "owner",
-      },
-    },
-    {
-      $unwind: {
-        path: "$owner",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $project: {
-        content: 1,
-        video: 1,
-        owner: {
-          _id: 1,
-          username: 1,
-          email: 1, // Adjust the fields as needed
-        },
-        createdAt: 1,
-        updatedAt: 1,
-      },
-    },
-  ];
-
-  // Use the mongooseAggregatePaginate plugin to paginate the results
   const options = {
     page: parseInt(page, 10),
     limit: parseInt(limit, 10),
   };
 
-  const comments = await Comment.aggregatePaginate(
-    Comment.aggregate(pipeline),
-    options
-  );
+  const comments = await Comment.paginate({ video: videoId }, options);
 
-  res
+  if (!comments) {
+    throw new ApiError(
+      408,
+      "There is no comments / error while fetching comments"
+    );
+  }
+
+  return res
     .status(200)
-    .json(new ApiResponse(comments, "Comments fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        comments,
+        "All comments have been fetched successfully"
+      )
+    );
 });
-
-export { getVideoComments };
 
 const addComment = asyncHandler(async (req, res) => {
   // TODO: add a comment to a video
+
+  const { content, videoId, ownerId } = req.body;
+
+  if (!content) {
+    throw new ApiError(208, "Content is required");
+  }
+  if (!videoId) {
+    throw new ApiError(208, "video is required");
+  }
+  if (!ownerId) {
+    throw new ApiError(208, "owner field is required");
+  }
+
+  const comment = await new Comment({
+    content,
+    video: videoId,
+    owner: ownerId,
+  });
+
+  await comment.save();
+
+  const createdComment = await Comment.findById(comment._id);
+
+  if (!createdComment) {
+    throw new ApiError(500, "something went wrong while creating comment");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        createdComment,
+        "Comment has been created Successfully"
+      )
+    );
 });
 
 const updateComment = asyncHandler(async (req, res) => {
   // TODO: update a comment
+
+  const comment = await Comment.findByIdAndUpdate(
+    req.comment?._id,
+    {
+      $set: {
+        content: content,
+      },
+    },
+    { new: true }
+  );
+
+  if (!comment) {
+    throw new ApiError(208, "Couldnot found Comment");
+  }
+
+  return res
+    .status(208)
+    .json(new ApiResponse(208, comment, "Comment Updated Successfully"));
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
   // TODO: delete a comment
+  const { commentId } = req.params;
+
+  const comment = await Comment.findByIdAndUpdate(commentId);
+
+  if (!comment) {
+    throw new ApiError(408, "can't find comment");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, comment, "Comment deleted Successfully"));
 });
 
 export { getVideoComments, addComment, updateComment, deleteComment };

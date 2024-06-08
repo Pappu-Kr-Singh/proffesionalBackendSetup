@@ -1,13 +1,20 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../modles/video.model.js";
-// import { User } from "../modles/user.model";
+import { User } from "../modles/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
+  } = req.query;
   //TODO: get all videos based on query, sort, pagination
 
   const filterVideos = query ? { title: { $regex: query, $options: "i" } } : {};
@@ -16,12 +23,12 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 
   const sortOptions = {};
-  (sortBy = "createdAt"), (sortType = "desc");
-  sortVideo[sortBy] = sortType === "asc" ? 1 : -1;
+  sortOptions[sortBy] = sortType === "asc" ? 1 : -1;
 
-  const videos = Video.find(filterVideos)
+  const videos = await Video.find(filterVideos)
     .sort(sortOptions)
-    .skip((page - 1) * limit);
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit));
 
   const totalVideos = await Video.countDocuments(filterVideos);
 
@@ -81,6 +88,14 @@ const publishAVideo = asyncHandler(async (req, res) => {
     );
   }
 
+  // get user object
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "user Not Found");
+  }
+
   // adding video in db
 
   const video = await Video.create({
@@ -88,6 +103,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     description,
     videoFile: videoFile.url,
     thumbnail: thumbnail.url,
+    owner: user._id,
   });
 
   return res
@@ -131,9 +147,11 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video Id");
   }
 
-  const oldVideo = req.user.video;
-  console.log(video);
+  const oldVideo = req.video;
+  console.log(oldVideo);
   // delete old video
+
+  // if()
 
   const videoFile = await uploadOnCloudinary(videoId);
 
@@ -157,6 +175,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, video, "Video has been updated successfully"));
 });
+// this needs to be worked on......
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -166,21 +185,17 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(201, "Invalid video Id");
   }
 
-  // await Video.findByIdAndUpdate(
-  //   req.video._id,{
-  //     $unset:{
-
-  //     }
-  //   }
-  // )
-
   const video = await Video.findById(videoId);
 
   if (!video) {
     throw new ApiError(201, "Video not found");
   }
 
-  await video.remove();
+  if (String(video.owner) !== String(req.user._id)) {
+    throw new ApiError(408, "You are not authorized to delete the video");
+  }
+
+  await video.deleteOne();
 
   return res
     .status(200)
