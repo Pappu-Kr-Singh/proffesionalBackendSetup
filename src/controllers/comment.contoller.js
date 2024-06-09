@@ -14,7 +14,15 @@ const getVideoComments = asyncHandler(async (req, res) => {
     limit: parseInt(limit, 10),
   };
 
-  const comments = await Comment.paginate({ video: videoId }, options);
+  const { ObjectId } = mongoose.Types;
+
+  const aggregate = Comment.aggregate([
+    {
+      $match: { video: new ObjectId(videoId) },
+    },
+  ]);
+
+  const comments = await Comment.aggregatePaginate(aggregate, options);
 
   if (!comments) {
     throw new ApiError(
@@ -40,7 +48,7 @@ const addComment = asyncHandler(async (req, res) => {
   const { content, videoId, ownerId } = req.body;
 
   if (!content) {
-    throw new ApiError(208, "Content is required");
+    throw new ApiError(208, "content is required");
   }
   if (!videoId) {
     throw new ApiError(208, "video is required");
@@ -50,7 +58,7 @@ const addComment = asyncHandler(async (req, res) => {
   }
 
   const comment = await new Comment({
-    content,
+    content: content,
     video: videoId,
     owner: ownerId,
   });
@@ -76,9 +84,13 @@ const addComment = asyncHandler(async (req, res) => {
 
 const updateComment = asyncHandler(async (req, res) => {
   // TODO: update a comment
+  const { commentId } = req.params;
+  const { content } = req.body;
+
+  console.log("req comment ", req.params);
 
   const comment = await Comment.findByIdAndUpdate(
-    req.comment?._id,
+    commentId,
     {
       $set: {
         content: content,
@@ -105,6 +117,8 @@ const deleteComment = asyncHandler(async (req, res) => {
   if (!comment) {
     throw new ApiError(408, "can't find comment");
   }
+
+  if (String(comment.owner) != req.user._d) await comment.deleteOne();
 
   return res
     .status(200)
