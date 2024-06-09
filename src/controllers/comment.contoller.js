@@ -57,7 +57,7 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(208, "owner field is required");
   }
 
-  const comment = await new Comment({
+  const comment = await Comment.create({
     content: content,
     video: videoId,
     owner: ownerId,
