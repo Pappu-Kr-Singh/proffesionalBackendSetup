@@ -15,3 +15,5 @@ router.use(verifyJWT);
 router.get("/", getAllProducts);
 router.post("/", createProduct);
 router.route("/:productId").delete(deleteProduct).patch(updateProduct);
+
+export default router;

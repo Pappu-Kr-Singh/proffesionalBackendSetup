@@ -26,6 +26,7 @@ import likeRouter from "./routes/like.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
 import postRouter from "./routes/post.routes.js";
 import productRouter from "./routes/product.routes.js";
+import orderRouter from "./routes/order.routes.js";
 
 // routes declaration
 app.use("/api/v1/users", userRouter);
@@ -37,6 +38,7 @@ app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/posts", postRouter);
 app.use("/api/v1/products", productRouter);
+app.use("/api/v1/orders", orderRouter);
 
 // http://localhost:8000/api/v1/users/register
 
