@@ -35,7 +35,7 @@ const productSchema = new Schema(
       ref: "User",
     },
   },
-  { timestamps }
+  { timestamps: true }
 );
 
 export const Product = mongoose.model("Product", productSchema);

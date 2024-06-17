@@ -1,5 +1,5 @@
 import mongoose, { isValidObjectId } from "mongoose";
-import { Order } from "../modles/order.model";
+import { Order } from "../modles/order.model.js";
 import { User } from "../modles/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
